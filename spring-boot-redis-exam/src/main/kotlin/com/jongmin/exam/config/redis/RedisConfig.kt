@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.validation.annotation.Validated
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
@@ -17,6 +18,12 @@ class RedisConfig(
     @Bean
     fun redisConnectionFactory(): RedisConnectionFactory {
         return LettuceConnectionFactory(properties.host, properties.port)
+    }
+
+    @Bean
+    fun redisTemplate(): RedisTemplate<Any, Any> {
+        return RedisTemplate<Any, Any>()
+            .apply { setConnectionFactory(redisConnectionFactory()) }
     }
 }
 

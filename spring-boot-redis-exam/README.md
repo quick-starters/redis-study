@@ -18,6 +18,10 @@ Spring Boot 2.0 부터는 `spring-boot-starter-data-redis`가 내부적으로 le
 Spring Data Redis의 `RedisRepository`를 이용하면 간단하게 Domain Entity를 Redis Hash로 만들 수 있다. 다만 트랜잭션을 지원하지 않기 때문에 만약
 트랜잭션을 적용하고 싶다면 `RedisTemplate`을 사용해야 한다.
 
+## RedisTemplate
+
+`RedisTemplate`을 사용하면 특정 Entity 뿐만 아니라 여러가지 원하는 타입을 넣을 수 있다.
+
 # How to run
 
 ## Run Redis using Docker
