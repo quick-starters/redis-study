@@ -1,0 +1,4 @@
+spring:
+  redis:
+    host: localhost # default
+    port: 6379 # default
