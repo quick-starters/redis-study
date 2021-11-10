@@ -1,5 +1,11 @@
 # Brief Summary
 
+## Run Redis using Docker
+
+```shell
+docker run --name redis -d -p 6379:6379 redis:alpine
+```
+
 ## Redis Client
 
 Java의 Redis Client는 크게 두 가지가 있다.
@@ -22,10 +28,14 @@ Spring Data Redis의 `RedisRepository`를 이용하면 간단하게 Domain Entit
 
 `RedisTemplate`을 사용하면 특정 Entity 뿐만 아니라 여러가지 원하는 타입을 넣을 수 있다.
 
-# How to run
+## Spring Redis Cache
 
-## Run Redis using Docker
+`@EnableCaching`로 사용가능.
 
-```shell
-docker run --name redis -d -p 6379:6379 redis:alpine
-```
+- @Cacheable: 캐시가 있으면 캐시의 정보를 사용하고 없으면 새로 등록한다.
+- @CachePut: 항상 캐시에 저장한다.
+- @CacheEvict: 캐시를 삭제한다.
+
+기본적으로 serializer로 `JdkSerializationRedisSerializer`를 사용하기 때문에 cache로 사용할 entity에 Serializable을 implements 해야한다. 그러므로 cache 저장 후, entity가 변경되는 경우 deserializer시에 깨질 수가 있다. (에러 발생)
+
+가능하면 별도의 `CacheManager`를 만들어 serde와 TTL 같은 설정들을 해주는 것이 좋을 것 같다.
