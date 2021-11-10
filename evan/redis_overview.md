@@ -40,7 +40,7 @@ username
 
 ### 다양한 자료 구조 지원
 
-![Redis 기본 개념 (기초, Collection 타입, Expire, Persistence)](https://blog.kakaocdn.net/dn/bsxKIM/btqE9u1RqHA/pd48khq1lAJsdtcbg3LsE1/img.png)
+![Redis 기본 개념 (기초, Collection 타입, Expire, Persistence)](./images/img.png)
 
 Redis는 일반 Key-Value 스토어가 아니라 실제로 다양한 종류의 자료형을 지원한다. 기존의 Key-Value 스토어에서는 문자열 키를 문자열 값에 연결하는 반면 Redis에서는 값이 단순한 문자열에 국한되지 않고 더 복잡한 데이터 구조도 저장할 수 있다. 
 
@@ -65,7 +65,7 @@ Redis에서 지원하는 모든 자료형의 목록
 
 ### Pub/Sub 지원
 
-![Redis – spring-data-redis : 발행/구독(pub/sub) 모델의 구현](https://daddyprogrammer.org/wp-content/uploads/2019/05/redis-pub-sub.png)
+![Redis – spring-data-redis : 발행/구독(pub/sub) 모델의 구현](./images/redis-pub-sub.png)
 
 Redis는 Pub/Sub 기능을 지원한다. 서버 간에 통지가 필요할 때, 이 기능이 매우 유용하다.
 
@@ -73,7 +73,7 @@ Redis는 Pub/Sub 기능을 지원한다. 서버 간에 통지가 필요할 때, 
 
 ### 디스크 저장(Persistent Layer)
 
-![Durable Redis | Redis](https://redis.com/wp-content/uploads/2018/04/diagram-durable-redis-redis-persistence.png)
+![Durable Redis | Redis](./images/diagram-durable-redis-redis-persistence.png)
 
 Redis의 가장 큰 특징 중 하나는 현재의 메모리 상태를 디스크에 저장할 수 있다는 것이다. Redis에는 현재 메모리 상태의 스냅샷을 남기는 `RDB 기능` 과 지금까지 실행된 업데이트 관련 명령어 집합인 `AOF` 가 있다.
 
@@ -85,7 +85,7 @@ AOF는 `Append Only File` 의 약어로, set/del 등의 업데이트 관련 명�
 
 ### 복제(Replication)
 
-![image-20211110225220828](/Users/addpage/Library/Application Support/typora-user-images/image-20211110225220828.png)
+![image-20211110225220828](./images/image-20211110225220828.png)
 
 Redis는 마스터/슬레이브 리플리케이션을 지원한다. 이를 통해 마스터에 장애가 발생하면 슬레이브로 서비스하거나 마스터의 부하가 많을 때에는 슬레이브를 이용해서 읽기를 처리할 수도 있다. 대규모 서비스에서 Redis 저장소로 안정적으로 사용하려면 복제 기능을 반드시 이용해야한다.
 
@@ -210,7 +210,7 @@ Redis에는 모든 데이터를 삭제하는 flushall/flushdb 라는 명령이 �
 
 #### Redis Cluster
 
-![Redis Cluster Architecture](http://redisgate.kr/images/cluster/Redis_Cluster_Architecture.png)
+![Redis Cluster Architecture](./images/Redis_Cluster_Architecture.png)
 
 Redis Cluster는 여러 **Redis 서버에 데이터를 자동으로 sharding 해주는 기술**이다. Replication 구성을 한다면 Cluster 운영중에 노드중 일부가 장애를 겪고 있더라도 작업을 계속할 수 있게 해준다. (별도의 Replication 구성이 필요한 것은 아니다.)
 
