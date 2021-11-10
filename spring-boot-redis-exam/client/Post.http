@@ -1,0 +1,13 @@
+# Create Post
+POST http://localhost:8080/posts
+Content-Type: application/json
+
+###
+
+# Get Post (Fill id)
+GET http://localhost:8080/posts/{id}
+
+###
+
+# Delete Post (Fill id)
+DELETE http://localhost:8080/posts/{id}
