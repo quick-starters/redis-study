@@ -5,6 +5,7 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 
+//@CacheConfig(cacheNames = ["post"], cacheManager = "postCacheManager")
 @CacheConfig(cacheNames = ["post"])
 @Component
 class PostMemoryRepository {
