@@ -189,7 +189,7 @@ lfu-log-factor     10          -> LFU 알고리즘에 의한 메모리 운영(De
 lfu-decay-time     1
 ```
 
-### 5.4 LazyFree 파라메터
+## 5.4 LazyFree 파라메터
 
 인-메모리 기반의 데이터 저장 구조인 Redis에서 메모리 영역에 대한 효율적인 운영과 관리는 성능에 직접적인 영향을 미치기 때문에 매우 종요한 성능 포인트 중에 하나이다. 특히 초당 수만~수십 만 건의 데이터가 저장되는 빅데이터 환경은 빠른 시간 내에 **Redis 인스턴스에게 할당된 메모리 영역이 최대 임계치에 도달하게 되는데 이 경우, 연속적인 범위 키(Key) 값이 동시에 삭제되는 오퍼레이션이 실행되면 메모리 부족과 프로세스의 지연처리로 인해 성능 지연문제가 발생하게 된다.**
 
@@ -204,14 +204,121 @@ lazyfree-lazy-server-del      no        -> yes 권장 (unlink로 데이터 변�
 slave-lazy-flush              no        -> yes 권장 (복제 서버가 삭제 된 후 복제할 때 FlushAll async 명령어로 삭제)
 ```
 
-#### 5.4.1 lazyfree-lazy-eviction
+### 5.4.1 lazyfree-lazy-eviction
 
+메모리 영역이 Full 되었을 때 연속적인 범위의 Key 값을 삭제하면 기존 메모리 영역에 저장되어 있던 데이터는 DEL 명령어에 의해 삭제하는데 이 작업은 서버 프로세스의 main 스레드에의해 실행되면서 blocking이 발생한다.
+이 파라메터 값을 "YES"로 설정하면 **DEL 명령어가 아닌 UNLINK 명령어가 실행되고 서버 프로세스의 Sub-Thread 3에 의해 백그라운드에서 수행되기 때문에 blocking 현상을 피할 수 있게 되어 성능을 향상시킬 수 있다.**
 
+### 5.4.2 lazyfree-lazy-expire
 
-#### 5.4.2 lazyfree-lazy-expire
+EXPIRE 명령어를 실행하면 메로리 상에 무효화된 키 값을 삭제하는데 내부적으로 DEL 명령어가 실행되면서 blocking이 발생한다. 이 파라메터 값을 "YES"로 설정하면 UNLINK 명령어가 실행되면서 blocking을 피할 수 있다.
 
-#### 5.4.3 lazyfree-lazy-server-del
+### 5.4.3 lazyfree-lazy-server-del
 
-#### 5.4.4 slave-lazy-flush
+메모리 상에 이미 저장되어 있는 키 값에 대해 SET 또는 RENAME 명령어를 실행하면 내부적으로 DEL 명령어가 실행되면서 blocking이 발생한다. 파라메터 값을 "YES"로 설정하면 이를 피할 수 있다.
 
+### 5.4.4 slave-lazy-flush
 
+Master-Slave 또는 Partition-Replication 서버 환경에서 복제 서버는 마스터 서버의 데이터를 복제할 때 변경된 부분에 대해서만 부분 복제하는 경우도 있지만 때에 따라서는 **기존 복제 데이터를 모두 삭제한 후 다시 복제하는 경우도 있다. 이 경우, 기존 복제 데이터를 빠른 시간 내에 삭제하고 동시에 다시 복제 작업을 수행해야 한다.** 이 파라메터 값을 "YES"로 설정하면 빠른 동기화 작업을 수행할 수 있다. 
+
+## 5.5 데이터 Persistence
+
+Redis 서버는 기본적으로 인-메모리 기반의 데이터 저장 관리 기술을 제공한다. 하지만 필요에 따라 중요한 데이터를 지속적으로 저장 관리해야 할 필요가 있는데 이와 같은 경우 디스크 저장 장치에 파일로 저장할 수 있다. 또한 Redis 서버를 재시작한 후 파일에 저장해둔 데이터를 다시 메모리로 읽어올 수 있다. **데이터를 지속적으로 저장하는 방법에는 `SAVE` 명령어를 이용하는 방법과 `AOF` 명령어로 저장하는 방법이 있다.**
+
+```bash
+$ vi redis.conf
+
+save 60 1000                         -> 60초마다 1,000 key 저장
+
+appendonly       yes                 -> AOF 환경 설정
+appendonlyname   "appendonly.aof"    -> AOF 파일명
+```
+
+### 5.5.1 RDB 파일을 이용하여 저장하는 방법
+
+첫 번째 방법은 SAVE 명령어로르 이용하여 일정한 주기마다 일정한 개수의 key 데이터-셋 값을 디스크 상에 dump.rdb 파일로 저장하는 방법이다.
+
+```bash
+localhost:6379> keys *
+1) "3"
+2) "2"
+3) "1"
+localhost:6379> save
+OK
+```
+
+사용자가 저장 주기와 저장 단위를 결정할 수 있고 시스템 자원이 최소한으로 요구된다는 장점이 있지만, 데이터를 최종 저장한 이후 새로운 저장이 수행되기 이전에 시스템에 장애가 발생하면 데이터 유실이 발생할 수 있기 때문에 지속성이 떨어지는 단점이 있다. RDB 파일에는 Save 명령어를 실행한 시점에 메모리 상에 저장된 모든 데이터를 SnapShot 형태로 저장한다.
+
+### 5.5.2 AOF(Append Only File) 명령어를 이용하여 저장하는 방법
+
+두 번째 방법은 AOF 명령어를 이용하여 디스크 상에 appendonly.aof 파일로 저장하는 방법이다. 이 방법은 redis-shell 상에서 `bgrewriteaof` 명령어를 실행한 이후에 입력, 수정, 삭제되는 모든 데이터를 저장한다.
+
+```bash
+localhost:6379> bgrewriteaof
+Background append only file rewriting started
+```
+
+|                             RDB(SnapShot)                            	|                    AOF(Append Only File)                    	|
+|:--------------------------------------------------------------------:	|:-----------------------------------------------------------:	|
+|     시스템 자원이 최소한으로 요구 (특정 시점에 쓰기 작업이 발생)     	|  시스템 자원이 집중적으로 요구 (지속적인 쓰기 작업이 발생)  	|
+|                 지속성이 떨어짐 (특정 시점마다 저장)                 	|              마지막 시점까지 데이터 복구가 가능             	|
+|                           복구 시간이 빠름                           	|     대용량 데이터 파일로 복구 작업 시 복구 성능이 떨어짐    	|
+| 저장 공간이 압축되기 때문에 최소 필요 (별도의 파일 압축이 필요 없음) 	| 저장 고간이 압축되지 않기 때문에 데이터 양에 따라 크기 결정 	|
+
+## 5.6 Copy on Write
+
+메모리 상에 로드된 데이터를 Parent Process와 Child Process가 동시에 참조하는 경우 Parent Process는 해당 데이터를 별도의 메모리 영역 또는 디스크 영역에 저장한 후(Copy on Write) 처리한다. 이 작업이 빈번해 지면 성능 지연 문제가 발생할 수 있고 메모리 효율성이 저하된다. (충분한 메모리가 필요하다.)
+Copry on Write는 다음과 같은 상황에 발생한다.
+
+1. SAVE 파라메터에 의해 주기적으로 RDB 파일을 생성할 때
+2. BGSAVE 명령어에 의해 RDB 파일을 저장할 때
+3. BGREWRITEAOF 명령어에 의해 AOF 파일을 저장할 때
+4. auto-aof-rewrite-percentage 파라메터에 의해 AOF 파일을 재저장할 때
+5. Master-Slave, Partition-Replication Server 환경으로 구동할 때
+
+## 5.7 Benchmark For Redis
+
+Redis 서버는 redis-benchmark.exe 실행코드를 제공하는데 이를 통해 실제와 같은 데이터를 임의로 발생시켜 성능 이슈가 발생할 수 있는 가상 상태를 만들어 성능 최적화 작업을 수행할 수 있다.
+
+```bash
+<세션-1>
+redis-cli -h localhost -p 6379 -r 100 -i 1 info | grep used_memory_human
+
+<세션-2>
+redis-benchmark -h localhost -p 6379 -n 100000                    -> Redis 서버 성능 테스트(Batch-Job)
+
+redis-benchmark -h localhost -p 6379 -t set,lpush -n 100000 -q    -> set, lpush 명령어에 대한 성능평가
+```
+
+## 5.8 관리 명령어
+
+- info: Redis Server의 현재 상태 확인
+- select: Redis Server 내에 생성되어 있는 DB로 switch
+- dbsize: 현재 데이터베이스에 생성되어 있는 Keys 수
+- swapdb: 현재 데이터베이스에 할당할 swap DB 생성
+- flushall: 현재 생성되어 있는 모든 Keys 삭제
+- /flushdb: 현재 생성되어 있는 모든 DB 삭제
+- client list: 현재 Redis Server에 접속되어 있는 Client 정보 조회
+- client getname: client 명 조회
+- client kill: 해당 client 제거
+- time: Redis Server의 현재 시간
+
+## 5.9 Data Export & Import
+
+SAVE 명령어에 의해 Export된 rdb 파일을 Import 하는 방법.
+
+```bash
+$ redis-cli -p 6000 --rdb /home/redis/redis-stn/5000/dump.rdb
+```
+
+appendonly 명령어에 의해 Export된 aof 파일을 Import 하는 방법.
+
+```bash
+$ redis-cli -p 6002 -n 1000 --pipe < appendonly.aof
+```
+
+Redis Server 데이터를 text 파일로 export 하는 방법.
+
+```bash
+$ redis-cli -p 6000 --scv --scan > 20211201_data.csv
+```
